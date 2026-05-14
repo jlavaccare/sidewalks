@@ -166,7 +166,7 @@ folium.GeoJson(
         "fillColor": 'transparent',
         "fillOpacity": 0,
         "color": "black",
-        "weight": 1
+        "weight": 4
     },
 ).add_to(mm)
 

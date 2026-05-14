@@ -76,9 +76,9 @@ all_df_cd['sidewalk_right'] = all_df_cd['sidewalk_right'].fillna(-0.01)
 sw_cond = [
     ((all_df_cd['sidewalk_left'] < 0) & (all_df_cd['sidewalk_right'] < 0)),
     ((all_df_cd['sidewalk_left'] < 6) & (all_df_cd['sidewalk_right'] < 6)),
-    ((all_df_cd['sidewalk_left'] < 8.5) & (all_df_cd['sidewalk_right'] < 8.5)),
-    ((all_df_cd['sidewalk_left'] < 8.5) | (all_df_cd['sidewalk_right'] < 8.5)),
-    ((all_df_cd['sidewalk_left'] > 8.5) & (all_df_cd['sidewalk_right'] > 8.5)),
+    ((all_df_cd['sidewalk_left'] < 10) & (all_df_cd['sidewalk_right'] < 10)),
+    ((all_df_cd['sidewalk_left'] < 10) | (all_df_cd['sidewalk_right'] < 10)),
+    ((all_df_cd['sidewalk_left'] > 10) & (all_df_cd['sidewalk_right'] > 10)),
     ((all_df_cd['sidewalk_left'] > 30) & (all_df_cd['sidewalk_right'] > 30))
 ]
 
@@ -155,7 +155,7 @@ folium.GeoJson(
         "color": "black",
         "weight": 1
     },
-    tooltip=folium.GeoJsonTooltip(fields=['nbr', 'pct_both_uf', 'pct_both_nf', 'pct_one_nf', 'pct_both_wf', 'pct_errorf'], aliases=['Neighborhood: ', 'Both Sides Ultra-Narrow (under 6ft): ', 'Both Sides Narrow (under 8.5ft): ', 'One Side Narrow: ', 'Both Sides Wide (over 8.5 ft): ', 'Error: '])
+    tooltip=folium.GeoJsonTooltip(fields=['nbr', 'pct_both_uf', 'pct_both_nf', 'pct_one_nf', 'pct_both_wf', 'pct_errorf'], aliases=['Neighborhood: ', 'Both Sides Ultra-Narrow (under 6ft): ', 'Both Sides Narrow (under 10ft): ', 'One Side Narrow: ', 'Both Sides Wide (over 10 ft): ', 'Error: '])
 ).add_to(mm)
 
 folium.GeoJson(

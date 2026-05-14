@@ -78,11 +78,12 @@ sw_cond = [
     ((all_df_cd['sidewalk_left'] < 6) & (all_df_cd['sidewalk_right'] < 6)),
     ((all_df_cd['sidewalk_left'] < 8.5) & (all_df_cd['sidewalk_right'] < 8.5)),
     ((all_df_cd['sidewalk_left'] < 8.5) | (all_df_cd['sidewalk_right'] < 8.5)),
-    ((all_df_cd['sidewalk_left'] > 8.5) & (all_df_cd['sidewalk_right'] > 8.5))
+    ((all_df_cd['sidewalk_left'] > 8.5) & (all_df_cd['sidewalk_right'] > 8.5)),
+    ((all_df_cd['sidewalk_left'] > 30) & (all_df_cd['sidewalk_right'] > 30))
 ]
 
 
-choices = ["error", "both_u", "both_n", "one_n", "both_w"]
+choices = ["error", "both_u", "both_n", "one_n", "both_w", "error"]
 
 all_df_cd['risk_status_l'] = np.select(sw_cond, choices, default = 'error')
 
@@ -125,7 +126,7 @@ nbr_map['pct_one_n'] = (nbr_map['one_n']/(nbr_map['total'])).fillna(0)
 nbr_map['pct_one_nf'] = nbr_map['pct_one_n'].map(lambda x: '{:.1f}%'.format(x * 100))
 nbr_map['pct_both_w'] = (nbr_map['both_w']/(nbr_map['total'])).fillna(0)
 nbr_map['pct_both_wf'] = nbr_map['pct_both_w'].map(lambda x: '{:.1f}%'.format(x * 100))
-nbr_map['pct_error'] = (( (nbr_map['error']).fillna(0) + (nbr_map['error']).fillna(0))/(nbr_map['total'])).fillna(0)
+nbr_map['pct_error'] = ( ((nbr_map['error']).fillna(0))/(nbr_map['total'])).fillna(0)
 nbr_map['pct_errorf'] = nbr_map['pct_error'].map(lambda x: '{:.1f}%'.format(x * 100))
 
 #.to_csv("by_nbr.csv")
@@ -147,7 +148,7 @@ folium.TileLayer(
 # Add GeoJSON to map
 folium.GeoJson(
     nbr_map,
-    name="dist_left",
+    name="Sidewalk Width",
     style_function= lambda feature: {
         "fillColor": linear(feature['properties']['pct_both_n']),
         "fillOpacity": 0.9,
@@ -155,6 +156,18 @@ folium.GeoJson(
         "weight": 1
     },
     tooltip=folium.GeoJsonTooltip(fields=['nbr', 'pct_both_uf', 'pct_both_nf', 'pct_one_nf', 'pct_both_wf', 'pct_errorf'], aliases=['Neighborhood: ', 'Both Sides Ultra-Narrow (under 6ft): ', 'Both Sides Narrow (under 8.5ft): ', 'One Side Narrow: ', 'Both Sides Wide (over 8.5 ft): ', 'Error: '])
+).add_to(mm)
+
+folium.GeoJson(
+    cdd,
+    name="Council Districts",
+    show = False,
+    style_function= lambda feature: {
+        "fillColor": 'transparent',
+        "fillOpacity": 0,
+        "color": "black",
+        "weight": 1
+    },
 ).add_to(mm)
 
 linear.caption = "Pct. of Streets with Narrow Sidewalks** on Both Sides"

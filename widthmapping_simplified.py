@@ -143,6 +143,8 @@ nbr_map['pct_one_wf'] = nbr_map['pct_one_w'].map(lambda x: '{:.1f}%'.format(x * 
 
 #.to_csv("by_nbr.csv")
 
+backbone = all_streets[all_streets['sw_condition'] == 'both_w']
+
 
 # colormap
 linear = cm.LinearColormap(["blue", "red"], vmin=0, vmax = max(nbr_map['pct_both_n']))
@@ -168,6 +170,15 @@ folium.GeoJson(
         "weight": 1
     },
     tooltip=folium.GeoJsonTooltip(fields=['nbr', 'pct_both_uf', 'pct_both_nf', 'pct_one_nf', 'pct_both_wf', 'pct_errorf'], aliases=['Neighborhood: ', 'Both Sides Ultra-Narrow (under 6ft): ', 'Both Sides Narrow (under 10ft): ', 'One Side Narrow: ', 'Both Sides Wide (over 10 ft): ', 'Error: '])
+).add_to(mm)
+
+# Add GeoJSON to map
+folium.GeoJson(
+    backbone,
+    name = "Potential Backbone (Wide on Both Sides)",
+    show = False,
+    color = '#83eeff',
+    weight = 3,
 ).add_to(mm)
 
 folium.GeoJson(
@@ -224,14 +235,6 @@ def style_function(feature):
         style['fillOpacity'] = 0.5
         
     return style
-
-# Add GeoJSON to map
-folium.GeoJson(
-    all_streets,
-    name = "Curb-Property Line Distances",
-    style_function=style_function,
-    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right', 'sw_conditionf'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: ', 'condition: '])
-).add_to(m)
 
 folium.GeoJson(
     cdd,

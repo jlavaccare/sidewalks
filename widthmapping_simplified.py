@@ -84,9 +84,10 @@ sw_cond = [
 
 
 choices = ["error", "both_u", "both_n", "one_n", "both_w", "error"]
+choices_f = ["Error", "Both Sides Ultra-Narrow", "Both Sides Narrow", "One Side Narrow", "Both Sides Wide", "Error"]
 
-all_df_cd['risk_status_l'] = np.select(sw_cond, choices, default = 'error')
-
+all_df_cd['sw_condition'] = np.select(sw_cond, choices, default = 'error')
+all_df_cd['sw_conditionf'] = np.select(sw_cond, choices_f, default = 'error')
 
 # remove any rows with blank geometry
 all_df_cd = all_df_cd.dropna(subset=['geometry']).drop(columns=['update_', 'newsegdate'], errors='ignore')
@@ -111,10 +112,18 @@ all_streets = all_streets[all_streets.geometry.type.isin(['LineString','MultiLin
 all_streets = all_streets[all_streets['Shape__Len'] > 30]
 all_streets = all_streets[all_streets['Shape__Len'] < 2000]
 
+# removing all streets in industrial areas
+# exclude = ['Port Richmond', 'Navy Yard', 'Airport', 'East Park', 'Franklin Mills', 'Industrial', 'Northeast Phila Airport', 'Wissahickon Park']
+
+# all_streets = all_streets[~ all_streets['nbr'].isin(exclude)]
+
+# removing these neighborhoods from the neighborhood map
+# neighborhoods = neighborhoods[~ neighborhoods['MAPNAME'].isin(exclude)]
+
 # summary table by council district
-# risk_l = pd.DataFrame(all_streets.groupby(['cd', 'risk_status_l'], as_index = False).agg({'Shape__Len': 'size'})).pivot(index = 'risk_status_l', columns= 'cd', values= 'Shape__Len').to_csv("by_dist.csv")
+# risk_l = pd.DataFrame(all_streets.groupby(['cd', 'sw_condition'], as_index = False).agg({'Shape__Len': 'size'})).pivot(index = 'sw_condition', columns= 'cd', values= 'Shape__Len').to_csv("by_dist.csv")
 # summary table by neighborhood
-risk_l_2 = pd.DataFrame(all_streets.groupby(['nbr', 'risk_status_l'], as_index = False).agg({'Shape__Len': 'size'})).pivot(columns = 'risk_status_l', index= 'nbr', values= 'Shape__Len').reset_index()
+risk_l_2 = pd.DataFrame(all_streets.groupby(['nbr', 'sw_condition'], as_index = False).agg({'Shape__Len': 'size'})).pivot(columns = 'sw_condition', index= 'nbr', values= 'Shape__Len').reset_index()
 # merge with neighborhood shapefile for mapping
 nbr_map = neighborhoods.merge(risk_l_2, left_on='MAPNAME', right_on = 'nbr')
 nbr_map['total'] = nbr_map.iloc[:, 7:].sum(axis=1).fillna(0)
@@ -128,6 +137,9 @@ nbr_map['pct_both_w'] = (nbr_map['both_w']/(nbr_map['total'])).fillna(0)
 nbr_map['pct_both_wf'] = nbr_map['pct_both_w'].map(lambda x: '{:.1f}%'.format(x * 100))
 nbr_map['pct_error'] = ( ((nbr_map['error']).fillna(0))/(nbr_map['total'])).fillna(0)
 nbr_map['pct_errorf'] = nbr_map['pct_error'].map(lambda x: '{:.1f}%'.format(x * 100))
+nbr_map['pct_one_w'] = ((nbr_map['one_n'] + nbr_map['both_w'])/(nbr_map['total'])).fillna(0)
+nbr_map['pct_one_not_w'] = 1 - nbr_map['pct_one_w']
+nbr_map['pct_one_wf'] = nbr_map['pct_one_w'].map(lambda x: '{:.1f}%'.format(x * 100))
 
 #.to_csv("by_nbr.csv")
 
@@ -148,7 +160,7 @@ folium.TileLayer(
 # Add GeoJSON to map
 folium.GeoJson(
     nbr_map,
-    name="Sidewalk Width",
+    name="Neighborhoods with Narrow Sidewalks**",
     style_function= lambda feature: {
         "fillColor": linear(feature['properties']['pct_both_n']),
         "fillOpacity": 0.9,
@@ -182,8 +194,8 @@ mm.save("output/curb_parcel_narrow.html")
 
 # Color map of every street
 # Create color map based on category
-categories = all_streets['risk_status_l'].unique()
-colors = ['#424242', '#9a6fe3' , '#420d09','#0218de', '#de0202' ] #['error', 'one_n' 'both_u', 'both_w', 'both_n']
+categories = all_streets['sw_condition'].unique()
+colors = ['#424242', '#9a6fe3' , '#de0202', '#420d09','#0218de' ] #['error', 'one_n' 'both_u', 'both_w', 'both_n']
 color_map = {cat: colors[i % len(colors)] for i, cat in enumerate(categories)}
 
 m = folium.Map(location=[39.9533, -75.1634], zoom_start=11)
@@ -198,7 +210,7 @@ folium.TileLayer(
 ).add_to(m)
 
 def style_function(feature):
-    category = feature['properties']['risk_status_l']
+    category = feature['properties']['sw_condition']
     line_color = color_map.get(category, '#424242')
     
     style = {
@@ -217,7 +229,7 @@ def style_function(feature):
 folium.GeoJson(
     all_streets,
     style_function=style_function,
-    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right', 'risk_status_l'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: ', 'Status: '])
+    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right', 'sw_conditionf'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: ', 'condition: '])
 ).add_to(m)
 
 folium.LayerControl().add_to(m)

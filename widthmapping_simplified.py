@@ -160,7 +160,7 @@ folium.TileLayer(
 # Add GeoJSON to map
 folium.GeoJson(
     nbr_map,
-    name="Neighborhoods with Narrow Sidewalks**",
+    name="Neighborhoods with Narrow Curb-Property Line Distances",
     style_function= lambda feature: {
         "fillColor": linear(feature['properties']['pct_both_n']),
         "fillOpacity": 0.9,
@@ -228,8 +228,21 @@ def style_function(feature):
 # Add GeoJSON to map
 folium.GeoJson(
     all_streets,
+    name = "Curb-Property Line Distances",
     style_function=style_function,
     tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right', 'sw_conditionf'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: ', 'condition: '])
+).add_to(m)
+
+folium.GeoJson(
+    cdd,
+    name="Council Districts",
+    show = False,
+    style_function= lambda feature: {
+        "fillColor": 'transparent',
+        "fillOpacity": 0,
+        "color": "black",
+        "weight": 4
+    },
 ).add_to(m)
 
 folium.LayerControl().add_to(m)

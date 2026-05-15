@@ -182,7 +182,7 @@ folium.GeoJson(
     },
 ).add_to(mm)
 
-linear.caption = "Pct. of Streets with Narrow Sidewalks** on Both Sides"
+linear.caption = "Pct. of Streets with Narrow Distances on Both Sides"
 mm.add_child(linear)
 
 folium.LayerControl().add_to(mm)

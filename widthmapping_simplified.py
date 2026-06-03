@@ -143,9 +143,19 @@ nbr_map['pct_one_wf'] = nbr_map['pct_one_w'].map(lambda x: '{:.1f}%'.format(x * 
 
 #.to_csv("output/tables/by_nbr.csv")
 
-backbone = all_streets[all_streets['sw_condition'] == 'both_w']
-backbone.to_file("output/backbone.shp")
+backbone_only = all_streets[all_streets['sw_condition'].isin(['both_w', 'one_n'])]
+backbone_only.to_file("output/shp/backbone.shp")
 
+bb_cond = [
+    (backbone['sw_condition'] == 'one_n'),
+    (backbone['sw_condition'] == 'both_w')
+]
+
+choices_b = ["One Side Wide", "Both Sides Wide"]
+
+backbone = all_streets.copy()
+
+backbone['bb_condition'] = np.select(bb_cond, choices_b, "Both Sides Narrow or Data Error")
 
 # colormap
 linear = cm.LinearColormap(["blue", "red"], vmin=0, vmax = max(nbr_map['pct_both_n']))
@@ -210,6 +220,10 @@ categories = all_streets['sw_condition'].unique()
 colors = ['#424242', '#9a6fe3' , '#de0202', '#420d09','#0218de' ] #['error', 'one_n' 'both_u', 'both_w', 'both_n']
 color_map = {cat: colors[i % len(colors)] for i, cat in enumerate(categories)}
 
+categories_b = backbone['bb_condition'].unique()
+colors_b = ['#424242', '#9a6fe3' , '#0000ff'] #[other, 'one_n', 'both_w']
+color_map_b = {cat: colors_b[i % len(colors_b)] for i, cat in enumerate(categories_b)}
+
 m = folium.Map(location=[39.9533, -75.1634], zoom_start=11)
 
 # Add Satellite
@@ -273,12 +287,27 @@ folium.TileLayer(
     control=True
 ).add_to(b)
 
+def style_function_b(feature):
+    category_b = feature['properties']['bb_condition']
+    line_color_b = color_map_b.get(category_b, '#424242')
+    
+    style_b = {
+        'color': line_color_b,
+        'weight': 3,
+        'opacity': 0.7
+    }
+
+    if feature['geometry']['type'] in ['Polygon', 'MultiPolygon']:
+        style_b['fillColor'] = line_color_b
+        style_b['fillOpacity'] = 0.5
+        
+    return style_b
+
 folium.GeoJson(
     backbone,
-    name = "Backbone",
-    show = True,
-    color = '#0000ff',
-    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: '])
+    name="Backbone",
+    style_function=style_function_b,
+    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right', 'bb_condition'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: ', 'Condition'])
 ).add_to(b)
 
 folium.GeoJson(

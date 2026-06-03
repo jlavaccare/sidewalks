@@ -150,7 +150,7 @@ for i in range(len(pdd)):
 all_df = pd.concat(dist_list)
 all_df_pd = pd.DataFrame(all_df.drop(columns='geometry'))
 
-all_df_pd.to_csv('output/sidewalkwidths.csv', index=True)
+all_df_pd.to_csv('output/tables/sidewalkwidths.csv', index=True)
 
 all_df_pd[["sidewalk_left", "sidewalk_right"]].agg(["min", "max", "median", "mean", "skew"])
 all_df_pd.groupby('name')[["sidewalk_left", "sidewalk_right"]].agg(["min", "max", "median", "mean", "skew"])
@@ -191,7 +191,7 @@ risk_rate = pd.DataFrame(all_df_pd.groupby('name').agg(
 )
 )
 
-risk_rate.to_csv('output/sidewalk_tree_risk.csv', index=True)
+risk_rate.to_csv('output/tables/sidewalk_tree_risk.csv', index=True)
 
 """ 
 #error check

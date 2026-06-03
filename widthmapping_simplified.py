@@ -33,7 +33,7 @@ parks_lg = parks[parks['official_n'].isin(large_parks)]
 city_limits = cdd.dissolve(by = 'temp_id').to_crs(epsg=2272)
 city_nonpark = gpd.overlay(city_limits.to_crs(epsg=4326), parks_lg.to_crs(epsg=4326), how = 'difference')
 # import result of sidewalkwidths.py
-all_df = pd.read_csv("output/sidewalkwidths.csv")
+all_df = pd.read_csv("output/tables/sidewalkwidths.csv")
 cl_sidewalk_all = centerline_lines.merge(all_df, on='objectid')
 
 def filter_sf(sf_obj, district):
@@ -75,10 +75,10 @@ all_df_cd['sidewalk_right'] = all_df_cd['sidewalk_right'].fillna(-0.01)
 # generate "sidewalk conditions" categorical variable
 sw_cond = [
     ((all_df_cd['sidewalk_left'] < 0) & (all_df_cd['sidewalk_right'] < 0)),
-    ((all_df_cd['sidewalk_left'] < 6) & (all_df_cd['sidewalk_right'] < 6)),
-    ((all_df_cd['sidewalk_left'] < 10) & (all_df_cd['sidewalk_right'] < 10)),
-    ((all_df_cd['sidewalk_left'] < 10) | (all_df_cd['sidewalk_right'] < 10)),
-    ((all_df_cd['sidewalk_left'] > 10) & (all_df_cd['sidewalk_right'] > 10)),
+    ((all_df_cd['sidewalk_left'] < 6.5) & (all_df_cd['sidewalk_right'] < 6.5)),
+    ((all_df_cd['sidewalk_left'] < 12) & (all_df_cd['sidewalk_right'] < 12)),
+    ((all_df_cd['sidewalk_left'] < 12) | (all_df_cd['sidewalk_right'] < 12)),
+    ((all_df_cd['sidewalk_left'] > 12) & (all_df_cd['sidewalk_right'] > 12)),
     ((all_df_cd['sidewalk_left'] > 30) & (all_df_cd['sidewalk_right'] > 30))
 ]
 
@@ -121,7 +121,7 @@ all_streets = all_streets[all_streets['Shape__Len'] < 2000]
 # neighborhoods = neighborhoods[~ neighborhoods['MAPNAME'].isin(exclude)]
 
 # summary table by council district
-# risk_l = pd.DataFrame(all_streets.groupby(['cd', 'sw_condition'], as_index = False).agg({'Shape__Len': 'size'})).pivot(index = 'sw_condition', columns= 'cd', values= 'Shape__Len').to_csv("by_dist.csv")
+# risk_l = pd.DataFrame(all_streets.groupby(['cd', 'sw_condition'], as_index = False).agg({'Shape__Len': 'size'})).pivot(index = 'sw_condition', columns= 'cd', values= 'Shape__Len').to_csv("output/tables/by_dist.csv")
 # summary table by neighborhood
 risk_l_2 = pd.DataFrame(all_streets.groupby(['nbr', 'sw_condition'], as_index = False).agg({'Shape__Len': 'size'})).pivot(columns = 'sw_condition', index= 'nbr', values= 'Shape__Len').reset_index()
 # merge with neighborhood shapefile for mapping
@@ -141,9 +141,10 @@ nbr_map['pct_one_w'] = ((nbr_map['one_n'] + nbr_map['both_w'])/(nbr_map['total']
 nbr_map['pct_one_not_w'] = 1 - nbr_map['pct_one_w']
 nbr_map['pct_one_wf'] = nbr_map['pct_one_w'].map(lambda x: '{:.1f}%'.format(x * 100))
 
-#.to_csv("by_nbr.csv")
+#.to_csv("output/tables/by_nbr.csv")
 
 backbone = all_streets[all_streets['sw_condition'] == 'both_w']
+backbone.to_file("output/backbone.shp")
 
 
 # colormap
@@ -237,6 +238,12 @@ def style_function(feature):
     return style
 
 folium.GeoJson(
+    all_streets,
+    style_function=style_function,
+    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right', 'sw_conditionf'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: ', 'Status: '])
+).add_to(m)
+
+folium.GeoJson(
     cdd,
     name="Council Districts",
     show = False,
@@ -254,3 +261,38 @@ m.save("output/curb_parcel_allstreets.html")
 
 #st.title("Curb-Property Line Distances in Philadelphia Neighborhoods (Sidewalk Proxy)")
 #folium_static(mm)
+
+b = folium.Map(location=[39.9533, -75.1634], zoom_start=11)
+
+# Add Satellite
+folium.TileLayer(
+    tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attr='Esri',
+    name='Esri Satellite',
+    overlay=False,
+    control=True
+).add_to(b)
+
+folium.GeoJson(
+    backbone,
+    name = "Backbone",
+    show = True,
+    color = '#0000ff',
+    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: '])
+).add_to(b)
+
+folium.GeoJson(
+    cdd,
+    name="Council Districts",
+    show = False,
+    style_function= lambda feature: {
+        "fillColor": 'transparent',
+        "fillOpacity": 0,
+        "color": "black",
+        "weight": 4
+    },
+).add_to(b)
+
+folium.LayerControl().add_to(b)
+
+b.save("output/backbone.html")

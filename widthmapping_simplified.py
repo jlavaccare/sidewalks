@@ -182,7 +182,7 @@ folium.GeoJson(
         "color": "black",
         "weight": 1
     },
-    tooltip=folium.GeoJsonTooltip(fields=['nbr', 'pct_both_uf', 'pct_both_nf', 'pct_one_nf', 'pct_both_wf', 'pct_errorf'], aliases=['Neighborhood: ', 'Both Sides Ultra-Narrow (under 6ft): ', 'Both Sides Narrow (under 10ft): ', 'One Side Narrow: ', 'Both Sides Wide (over 10 ft): ', 'Error: '])
+    tooltip=folium.GeoJsonTooltip(fields=['nbr', 'pct_both_uf', 'pct_both_nf', 'pct_one_nf', 'pct_both_wf', 'pct_errorf'], aliases=['Neighborhood: ', 'Both Sides Ultra-Narrow (under 7ft): ', 'Both Sides Narrow (under 12.5ft): ', 'One Side Narrow: ', 'Both Sides Wide (over 12.5 ft): ', 'Error: '])
 ).add_to(mm)
 
 # Add GeoJSON to map

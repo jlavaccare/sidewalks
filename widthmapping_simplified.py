@@ -75,10 +75,10 @@ all_df_cd['sidewalk_right'] = all_df_cd['sidewalk_right'].fillna(-0.01)
 # generate "sidewalk conditions" categorical variable
 sw_cond = [
     ((all_df_cd['sidewalk_left'] < 0) & (all_df_cd['sidewalk_right'] < 0)),
-    ((all_df_cd['sidewalk_left'] < 6.5) & (all_df_cd['sidewalk_right'] < 6.5)),
-    ((all_df_cd['sidewalk_left'] < 12) & (all_df_cd['sidewalk_right'] < 12)),
-    ((all_df_cd['sidewalk_left'] < 12) | (all_df_cd['sidewalk_right'] < 12)),
-    ((all_df_cd['sidewalk_left'] > 12) & (all_df_cd['sidewalk_right'] > 12)),
+    ((all_df_cd['sidewalk_left'] < 7) & (all_df_cd['sidewalk_right'] < 7)),
+    ((all_df_cd['sidewalk_left'] < 12.5) & (all_df_cd['sidewalk_right'] < 12.5)),
+    ((all_df_cd['sidewalk_left'] < 12.5) | (all_df_cd['sidewalk_right'] < 12.5)),
+    ((all_df_cd['sidewalk_left'] > 12.5) & (all_df_cd['sidewalk_right'] > 12.5)),
     ((all_df_cd['sidewalk_left'] > 30) & (all_df_cd['sidewalk_right'] > 30))
 ]
 
@@ -146,6 +146,9 @@ nbr_map['pct_one_wf'] = nbr_map['pct_one_w'].map(lambda x: '{:.1f}%'.format(x * 
 backbone_only = all_streets[all_streets['sw_condition'].isin(['both_w', 'one_n'])]
 backbone_only.to_file("output/shp/backbone.shp")
 
+
+backbone = all_streets.copy()
+
 bb_cond = [
     (backbone['sw_condition'] == 'one_n'),
     (backbone['sw_condition'] == 'both_w')
@@ -153,7 +156,6 @@ bb_cond = [
 
 choices_b = ["One Side Wide", "Both Sides Wide"]
 
-backbone = all_streets.copy()
 
 backbone['bb_condition'] = np.select(bb_cond, choices_b, "Both Sides Narrow or Data Error")
 
@@ -307,7 +309,7 @@ folium.GeoJson(
     backbone,
     name="Backbone",
     style_function=style_function_b,
-    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sidewalk_left', 'sidewalk_right', 'bb_condition'], aliases=['Street Name: ', 'Distance_Left: ', 'Distance_Right: ', 'Condition'])
+    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'bb_condition'], aliases=['Street Name: ', 'Condition'])
 ).add_to(b)
 
 folium.GeoJson(

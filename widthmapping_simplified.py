@@ -219,7 +219,7 @@ mm.save("output/neighborhoods_narrow.html")
 # Color map of every street
 # Create color map based on category
 categories = all_streets['sw_condition'].unique()
-colors = ['#424242', '#9a6fe3' , '#de0202', '#420d09','#0218de' ] #['error', 'one_n' 'both_u', 'both_w', 'both_n']
+colors = ['#424242', '#de0202', '#9a6fe3' , '#420d09','#0218de' ] #['error', 'both_n', 'one_n' 'both_u', 'both_w'] // somehow one_n and both_n colors got flipped again
 color_map = {cat: colors[i % len(colors)] for i, cat in enumerate(categories)}
 
 categories_b = backbone['bb_condition'].unique()

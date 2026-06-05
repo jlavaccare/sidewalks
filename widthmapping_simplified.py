@@ -160,7 +160,7 @@ choices_b = ["One Side Wide", "Both Sides Wide"]
 backbone['bb_condition'] = np.select(bb_cond, choices_b, "Both Sides Narrow or Data Error")
 
 # colormap
-linear = cm.LinearColormap(["blue", "red"], vmin=0, vmax = max(nbr_map['pct_both_n']))
+linear = cm.LinearColormap(["red", "blue"], vmin=0, vmax = max(nbr_map['pct_one_w']))
 mm = folium.Map(location=[39.9533, -75.1634], zoom_start=11)
 
 # Add Satellite
@@ -175,14 +175,14 @@ folium.TileLayer(
 # Add GeoJSON to map
 folium.GeoJson(
     nbr_map,
-    name="Neighborhoods with Narrow Curb-Property Line Distances",
+    name="Neighborhoods with Highest Proportion of Backbone Streets",
     style_function= lambda feature: {
-        "fillColor": linear(feature['properties']['pct_both_n']),
+        "fillColor": linear(feature['properties']['pct_one_w']),
         "fillOpacity": 0.9,
         "color": "black",
         "weight": 1
     },
-    tooltip=folium.GeoJsonTooltip(fields=['nbr', 'pct_both_uf', 'pct_both_nf', 'pct_one_nf', 'pct_both_wf', 'pct_errorf'], aliases=['Neighborhood: ', 'Both Sides Ultra-Narrow (under 7ft): ', 'Both Sides Narrow (under 12.5ft): ', 'One Side Narrow: ', 'Both Sides Wide (over 12.5 ft): ', 'Error: '])
+    tooltip=folium.GeoJsonTooltip(fields=['nbr', 'pct_one_wf', 'pct_errorf'], aliases=['Neighborhood: ', 'Backbone Streets (one or both sides 12.5 ft or wider): ', 'Error Rate: '])
 ).add_to(mm)
 
 # Add GeoJSON to map
@@ -206,13 +206,13 @@ folium.GeoJson(
     },
 ).add_to(mm)
 
-linear.caption = "Pct. of Streets with Narrow Distances on Both Sides"
+linear.caption = "Pct. of Backbone Streets"
 mm.add_child(linear)
 
 folium.LayerControl().add_to(mm)
 
 
-mm.save("output/curb_parcel_narrow.html")
+mm.save("output/neighborhoods_narrow.html")
 
 
 

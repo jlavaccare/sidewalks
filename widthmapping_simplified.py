@@ -36,6 +36,8 @@ city_nonpark = gpd.overlay(city_limits.to_crs(epsg=4326), parks_lg.to_crs(epsg=4
 all_df = pd.read_csv("output/tables/sidewalkwidths.csv")
 cl_sidewalk_all = centerline_lines.merge(all_df, on='objectid')
 
+tree_pri = gpd.read_file("data/suitabilityfinal/suitablilityfinal.shp")
+
 def filter_sf(sf_obj, district):
     sf_mod = sf_obj.to_crs(epsg=4326)
     district = district.to_crs(epsg=4326)
@@ -112,6 +114,11 @@ all_streets = all_streets[all_streets.geometry.type.isin(['LineString','MultiLin
 all_streets = all_streets[all_streets['Shape__Len'] > 30]
 all_streets = all_streets[all_streets['Shape__Len'] < 2000]
 
+all_st_dup = all_streets[all_streets.duplicated(subset=['seg_id'], keep=False)]
+all_streets = all_streets.drop_duplicates(subset=['seg_id'], keep='first')
+
+tree_pri_d = tree_pri[tree_pri.duplicated(subset=['SEG_ID'], keep=False)]
+
 # removing all streets in industrial areas
 # exclude = ['Port Richmond', 'Navy Yard', 'Airport', 'East Park', 'Franklin Mills', 'Industrial', 'Northeast Phila Airport', 'Wissahickon Park']
 
@@ -143,21 +150,9 @@ nbr_map['pct_one_wf'] = nbr_map['pct_one_w'].map(lambda x: '{:.1f}%'.format(x * 
 
 #.to_csv("output/tables/by_nbr.csv")
 
-backbone_only = all_streets[all_streets['sw_condition'].isin(['both_w', 'one_n'])]
-backbone_only.to_file("output/shp/backbone.shp")
+backbone = all_streets[all_streets['sw_condition'].isin(['both_w', 'one_n'])]
+backbone.to_file("output/shp/backbone.shp")
 
-
-backbone = all_streets.copy()
-
-bb_cond = [
-    (backbone['sw_condition'] == 'one_n'),
-    (backbone['sw_condition'] == 'both_w')
-]
-
-choices_b = ["One Side Wide", "Both Sides Wide"]
-
-
-backbone['bb_condition'] = np.select(bb_cond, choices_b, "Both Sides Narrow or Data Error")
 
 # colormap
 linear = cm.LinearColormap(["red", "blue"], vmin=0, vmax = max(nbr_map['pct_one_w']))
@@ -211,10 +206,7 @@ mm.add_child(linear)
 
 folium.LayerControl().add_to(mm)
 
-
 mm.save("output/neighborhoods_narrow.html")
-
-
 
 # Color map of every street
 # Create color map based on category
@@ -222,8 +214,8 @@ categories = all_streets['sw_condition'].unique()
 colors = ['#424242', '#de0202', '#9a6fe3' , '#420d09','#0218de' ] #['error', 'both_n', 'one_n' 'both_u', 'both_w'] // somehow one_n and both_n colors got flipped again
 color_map = {cat: colors[i % len(colors)] for i, cat in enumerate(categories)}
 
-categories_b = backbone['bb_condition'].unique()
-colors_b = ['#424242', '#9a6fe3' , '#0000ff'] #[other, 'one_n', 'both_w']
+categories_b = backbone['sw_condition'].unique()
+colors_b = ['#9a6fe3' , '#0000ff'] #[other, 'one_n', 'both_w']
 color_map_b = {cat: colors_b[i % len(colors_b)] for i, cat in enumerate(categories_b)}
 
 m = folium.Map(location=[39.9533, -75.1634], zoom_start=11)
@@ -290,7 +282,7 @@ folium.TileLayer(
 ).add_to(b)
 
 def style_function_b(feature):
-    category_b = feature['properties']['bb_condition']
+    category_b = feature['properties']['sw_condition']
     line_color_b = color_map_b.get(category_b, '#424242')
     
     style_b = {
@@ -309,7 +301,7 @@ folium.GeoJson(
     backbone,
     name="Backbone",
     style_function=style_function_b,
-    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'bb_condition'], aliases=['Street Name: ', 'Condition'])
+    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sw_condition'], aliases=['Street Name: ', 'Condition'])
 ).add_to(b)
 
 folium.GeoJson(

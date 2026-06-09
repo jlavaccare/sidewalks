@@ -7,9 +7,11 @@ from shapely.geometry import LineString, Point
 from shapely.validation import make_valid
 import folium
 from shapely import unary_union
-import streamlit as st
-from streamlit_folium import folium_static
+# import streamlit as st
+# from streamlit_folium import folium_static
 import branca.colormap as cm
+
+os.chdir("C:/Users/John.LaVaccare/OneDrive - City of Philadelphia/Documents/Sidewalks/Data Analysis/sidewalkwidth_am")
 
 # Read centerline
 centerline_lines = gpd.read_file("data/Street_Centerline/Street_Centerline.shp")
@@ -37,6 +39,8 @@ all_df = pd.read_csv("output/tables/sidewalkwidths.csv")
 cl_sidewalk_all = centerline_lines.merge(all_df, on='objectid')
 
 tree_pri = gpd.read_file("data/suitabilityfinal/suitablilityfinal.shp")
+
+trees = gpd.read_file("data/ppr_tree_inventory_2025/ppr_tree_inventory_2025.shp").to_crs(epsg=4326)
 
 def filter_sf(sf_obj, district):
     sf_mod = sf_obj.to_crs(epsg=4326)
@@ -117,7 +121,17 @@ all_streets = all_streets[all_streets['Shape__Len'] < 2000]
 all_st_dup = all_streets[all_streets.duplicated(subset=['seg_id'], keep=False)]
 all_streets = all_streets.drop_duplicates(subset=['seg_id'], keep='first')
 
-tree_pri_d = tree_pri[tree_pri.duplicated(subset=['SEG_ID'], keep=False)]
+# tree_pri_d = tree_pri[tree_pri.duplicated(subset=['SEG_ID'], keep=False)] # duplicate entries in the tree priority list
+# tree_pri_d_ids = tree_pri_d['SEG_ID'].unique().tolist() # there are 1585 total duplicates
+
+col_keep = ['']
+tree_priority = pd.concat([tree_pri.iloc[:, 8:30], tree_pri.iloc[:, -6:]], axis=1).drop(columns='geometry').iloc[:, :-2]
+tree_priority2 = tree_priority.drop_duplicates(subset=['SEG_ID'], keep='first')
+
+street_tree = all_streets.merge(tree_priority2, left_on = 'seg_id', right_on = 'SEG_ID')
+
+# merge with neighborhood shapefile for mapping
+
 
 # removing all streets in industrial areas
 # exclude = ['Port Richmond', 'Navy Yard', 'Airport', 'East Park', 'Franklin Mills', 'Industrial', 'Northeast Phila Airport', 'Wissahickon Park']
@@ -131,7 +145,6 @@ tree_pri_d = tree_pri[tree_pri.duplicated(subset=['SEG_ID'], keep=False)]
 # risk_l = pd.DataFrame(all_streets.groupby(['cd', 'sw_condition'], as_index = False).agg({'Shape__Len': 'size'})).pivot(index = 'sw_condition', columns= 'cd', values= 'Shape__Len').to_csv("output/tables/by_dist.csv")
 # summary table by neighborhood
 risk_l_2 = pd.DataFrame(all_streets.groupby(['nbr', 'sw_condition'], as_index = False).agg({'Shape__Len': 'size'})).pivot(columns = 'sw_condition', index= 'nbr', values= 'Shape__Len').reset_index()
-# merge with neighborhood shapefile for mapping
 nbr_map = neighborhoods.merge(risk_l_2, left_on='MAPNAME', right_on = 'nbr')
 nbr_map['total'] = nbr_map.iloc[:, 7:].sum(axis=1).fillna(0)
 nbr_map['pct_both_u'] = (nbr_map['both_u']/nbr_map['total']).fillna(0)
@@ -148,9 +161,10 @@ nbr_map['pct_one_w'] = ((nbr_map['one_n'] + nbr_map['both_w'])/(nbr_map['total']
 nbr_map['pct_one_not_w'] = 1 - nbr_map['pct_one_w']
 nbr_map['pct_one_wf'] = nbr_map['pct_one_w'].map(lambda x: '{:.1f}%'.format(x * 100))
 
-#.to_csv("output/tables/by_nbr.csv")
+# nbr_map.to_csv("output/tables/by_nbr.csv")
 
-backbone = all_streets[all_streets['sw_condition'].isin(['both_w', 'one_n'])]
+# backbone = all_streets[all_streets['sw_condition'].isin(['both_w', 'one_n'])]
+backbone = street_tree[street_tree['sw_condition'].isin(['both_w', 'one_n'])].drop(columns = ['UPDATE_', 'NEWSEGDATE'])
 backbone.to_file("output/shp/backbone.shp")
 
 
@@ -297,25 +311,17 @@ def style_function_b(feature):
         
     return style_b
 
+#
+
 folium.GeoJson(
     backbone,
     name="Backbone",
     style_function=style_function_b,
-    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sw_condition'], aliases=['Street Name: ', 'Condition'])
-).add_to(b)
-
-folium.GeoJson(
-    cdd,
-    name="Council Districts",
-    show = False,
-    style_function= lambda feature: {
-        "fillColor": 'transparent',
-        "fillOpacity": 0,
-        "color": "black",
-        "weight": 4
-    },
+    tooltip=folium.GeoJsonTooltip(fields=['st_name_x', 'sw_condition', 'opportunit'], aliases=['Street Name: ', 'Condition: ', 'Tree Planting Opportunity: '])
 ).add_to(b)
 
 folium.LayerControl().add_to(b)
 
 b.save("output/backbone.html")
+
+# trees.explore()

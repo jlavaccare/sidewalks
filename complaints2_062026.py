@@ -38,6 +38,8 @@ sf_heat = sf_2225 = [[point.xy[1][0], point.xy[0][0]] for point in sf_2225.geome
 
 sw_sf.explore()
 
+#Map
+
 m = folium.Map(location=[39.9533, -75.1634], zoom_start=11)
 
 # Add Satellite
@@ -84,7 +86,11 @@ folium.GeoJson(
 ).add_to(m)
 
 
-HeatMap(sf_heat, name="Heatmap 2022-25 Sidewalk Complaints").add_to(m)
+HeatMap(sf_heat, 
+name="Heatmap 2022-25 Sidewalk Complaints",
+radius = 15,
+blur = 15,
+max_zoom = 12).add_to(m)
 
 folium.LayerControl().add_to(m)
 
